@@ -15,26 +15,46 @@
     protected async Task Connect()
     {
 
-        var serviceid = "device_information";
+        var serviceid = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E".ToLower();
+        var characteristics = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E";
+
+        //var serviceid = "2902".ToLower();
 
         var q = new RequestDeviceQuery();
         //Filtering on Sensun scale service
-        q.Filters.Add(new Filter() { Services = { "0000ffb0-0000-1000-8000-00805f9b34fb" } });
+        q.AcceptAllDevices = true;
+        //q.Filters.Add(new Filter() { Services = { serviceid } });
+        //q.Filters.Add(new Filter() { Name = "UART Service" });
         q.OptionalServices.Add(serviceid);
         var device = await navigator.RequestDeviceAsync(q);
 
-        //<1. Add Read>
-        var bytes = await navigator.ReadValueAsync(device.Id, serviceid, "firmware_revision_string");
-        firmware = System.Text.UTF8Encoding.UTF8.GetString(bytes);
-        //</1. Add Read>
 
-        int i = firmware.IndexOf('\0');
-        if (i >= 0)
-        {
-            firmware = firmware.Substring(0, i);
-        }
-        
-        StateHasChanged();
+        ////<1. Add Read>
+        //var bytes = await navigator.ReadValueAsync(device.Id, serviceid, "6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
+        //firmware = System.Text.UTF8Encoding.UTF8.GetString(bytes);
+        ////</1. Add Read>
 
+        //int i = firmware.IndexOf('\0');
+        //if (i >= 0)
+        //{
+        //    firmware = firmware.Substring(0, i);
+        //}
+
+        //StateHasChanged();
+
+        @*<9. Setup notification>*@
+        await navigator.SetupNotifyAsync(device.Id, serviceid, characteristics);
+        navigator.Notification += Value_Notification;
+        @*</9. Setup notification>*@
     }
+
+    @*<10. HandleNotification>*@
+    private void Value_Notification(object sender, CharacteristicEventArgs e)
+    {
+        var data = e.Value.ToArray();
+        firmware = System.Text.UTF8Encoding.UTF8.GetString(data);
+
+        StateHasChanged();
+    }
+
 }
